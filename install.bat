@@ -1,0 +1,1 @@
+powershell -ExecutionPolicy Bypass -File "C:\addroute\addroute.ps1"
