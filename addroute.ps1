@@ -1,6 +1,16 @@
-Set-ExecutionPolicy Unrestricted -Scope Process
+param (
+    [ValidateSet("add", "del")]
+    [string]$Mode,
+    [string]$Debug
+)
 
+try {
+  $Debubmode = [System.Convert]::ToBoolean($Debug) 
+} catch [FormatException] {
+  $Debubmode = $false
+}
 
+Write-Host  $Debubmode $Mode
 if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
     Write-Error "Этот скрипт требует права администратора. Запустите PowerShell от имени администратора."
     Read-Host
@@ -81,7 +91,7 @@ if (-not (Test-Path $filePath)) {
 }
 
 $routes = Get-Content $filePath
-
+$progres=0
 foreach ($route in $routes) {
     $route = $route.Trim()
     if (-not $route) { continue }
@@ -95,14 +105,26 @@ foreach ($route in $routes) {
     }
 
     try {
-        New-NetRoute -DestinationPrefix $network -NextHop $gateway -InterfaceAlias $interfaceAlias -ErrorAction Stop
+        $progres++
+        Write-Progress -PercentComplete ($progres/$routes.Count*100) -Status "Processing Items" -Activity "Item $progres of $($routes.Count)"
+        if($Mode -like "add"){
+            $null = New-NetRoute -DestinationPrefix $network -NextHop $gateway -InterfaceAlias $interfaceAlias -ErrorAction Stop | Out-Null
+        }else{
+            $null = Remove-NetRoute -DestinationPrefix $network -NextHop 0.0.0.0 -InterfaceAlias $interfaceAlias -ErrorAction Stop -Confirm:$false | Out-Null
+        }
+        
 
     }
     catch {
-        Write-Warning "Не удалось добавить маршрут для $network ($_)"
+        if($Debubmode -and $Mode -like "add"){Write-Warning "Не удалось добавить маршрут для $network ($_)"}
+        if($Debubmode -and $Mode -like "del"){Write-Warning "Не удалось добавить маршрут для $network ($_)"}
     }
 }
+if($Mode -like "add"){
+    Write-Host "`nПроцесс завершен. Проверьте добавленные маршруты:" -ForegroundColor Cyan
+}else{
+    Write-Host "`nПроцесс завершен. Проверьте маршруты:" -ForegroundColor Cyan
+}
 
-Write-Host "`nПроцесс завершен. Проверьте добавленные маршруты:" -ForegroundColor Cyan
 Get-NetRoute | Where-Object {$_.NextHop -eq $gateway} | Format-Table -AutoSize
 Read-Host

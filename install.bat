@@ -1,1 +1,1 @@
-powershell -ExecutionPolicy Bypass -File "C:\addroute\addroute.ps1"
+powershell -ExecutionPolicy Bypass -File "C:\addroute\addroute.ps1" -Mode add -Debug False

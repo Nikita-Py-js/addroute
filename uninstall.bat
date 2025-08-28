@@ -1,1 +1,1 @@
-powershell -ExecutionPolicy Bypass -File "C:\addroute\removeroute.ps1"
+powershell -ExecutionPolicy Bypass -File "C:\addroute\addroute.ps1" -Mode del -Debug False
